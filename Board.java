@@ -1,76 +1,165 @@
-
+import edu.princeton.cs.algs4.StdIn;
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.Queue;
+import edu.princeton.cs.algs4.MinPQ;
 
 public class Board {
-	private final int[][] tiles;
+	private final int[] cells;
 	private final int dim;
+	private final int blank_x, blank_y;
+
+	///////////////////////////////////////////////////////////////////////////////
+	private int getCell(int x, int y)			{ return cells[dim * y + x]; }
+	private void setCell(int val, int x, int y) { cells[dim * y + x] = val;  }
+	private void setCell(int[] cells, int val, int x, int y) {
+		cells[dim * y + x] = val;
+	}
+	private boolean atPlace(int x, int y)		{
+		return getCell(x, y) == 0 ? true : getCell(x, y) == x + y * dim + 1;
+	}
+	///////////////////////////////////////////////////////////////////////////////
+
+	private Board(int[] cells, int bx, int by) {
+		this.dim = (int)Math.sqrt(cells.length);
+		this.cells = cells;
+		this.blank_x = bx;
+		this.blank_y = by;
+	}
 
     // create a board from an n-by-n array of tiles,
     // where tiles[row][col] = tile at (row, col)
     public Board(int[][] tiles) {
-		this.tiles = new int[tiles.length][tiles.length];
-		this.dim = tiles.length;
-		for (int i = 0; i < tiles.length; ++i)
-			for (int j = 0; j < tiles.length; ++j)
-				this.tiles[i][j] = tiles[i][j];
+		dim = tiles.length;
+	    cells = new int[dim * dim];
+		int bx = 0, by = 0;
+		for (int y = 0; y < dim; ++y) {
+			for (int x = 0; x < dim; ++x) {
+				setCell(tiles[y][x], x, y);
+				if (tiles[y][x] == 0) {
+					bx = x; by = y;
+				}
+			}
+		}
+		this.blank_x = bx;
+		this.blank_y = by;
 	}
 
     // string representation of this board
     public String toString() {
-		String s = "" + tiles.length + "\n";
-		for (int i = 0; i < dim; ++i) {
-			for (int j = 0; j < dim; ++j)
-				s += (" " + tiles[i][j]);
-			s += "\n";
-		}
+		String s = "" + dim + "\n";
+		for (int y = 0; y < dim; ++y)
+			for (int x = 0; x < dim; ++x)
+				s += " " + getCell(x, y) + (x + 1 == dim ? "\n" : " ");
 		return s;
 	}
 
     // board dimension n
-    public int dimension() { return tiles.length; }
+    public int dimension() { return dim; }
 
     // number of tiles out of place
     public int hamming() {
 		int n = 0;
-
-		for (int i = 0; i < dim; ++i) {
-			for (int j = 0; j < dim; ++j) {
-				int cell = tiles[i][j];
-				if (i + j + 1 != cell
-					|| (cell == 0 && i != dim - 1 && j != dim - 1))
+		for (int y = 0; y < dim; ++y)
+			for (int x = 0; x < dim; ++x)
+				if (!atPlace(x, y)) {
+					// StdOut.printf(" >> (%d, %d) = %d\n", x, y, getCell(x, y));
 					n++;
-			}
-		}
+				}
 		return n;
 	}
 
     // sum of Manhattan distances between tiles and goal
     public int manhattan() {
-
+		int n = 0;
+		for (int y = 0; y < dim; ++y)
+			for (int x = 0; x < dim; ++x)
+				if (!atPlace(x, y)) {
+					// StdOut.println(getCell(x, y) + " = " + x2 + " --- " + y2);
+					// StdOut.println(" !> " + (Math.abs(x - x2) + Math.abs(y - y2)));
+					// StdOut.printf(" >> (%d, %d) = %d ||| %d\n", x, y, getCell(x, y),
+					// 			  getCell(x, y) / dim);
+					// StdOut.println();
+					int y2 = getCell(x, y) / dim, x2 = getCell(x, y) - y2 * dim - 1;
+					n += Math.abs((Math.abs(x - x2) + Math.abs(y - y2)));
+				}
+		return n;
 	}
 
     // is this board the goal board?
-    public boolean isGoal() {
-
-	}
+    public boolean isGoal() { return hamming() == 0; }
 
     // does this board equal y?
-    public boolean equals(Object y) {
+    public boolean equals(Object obj) {
+		Board that = (Board) obj;
 
+		if (this == that)			return true;
+		if (this.dim != that.dim)	return false;
+
+		for (int y = 0; y < dim; ++y)
+			for (int x = 0; x < dim; ++y)
+				if (this.getCell(x, y) != that.getCell(x, y))
+					return false;
+
+		return true;
+	}
+
+	private int[] cloneCells() {
+		int[] tmp = new int[cells.length];
+		for (int i = 0; i < cells.length; ++i)
+			tmp[i] = cells[i];
+		return tmp;
+	}
+
+	private int[] blankSwap(int x, int y) {
+		int[] cells = cloneCells();
+		setCell(cells, getCell(x, y), blank_x, blank_y);
+		setCell(cells, 0, x, y);
+		return cells;
 	}
 
     // all neighboring boards
     public Iterable<Board> neighbors() {
+		Queue<Board> q = new Queue<>();
 
+		final int[] dx = {0,  0, 1, -1};
+		final int[] dy = {1, -1, 0,  0};
+
+		for (int i = 0; i < 4; ++i) {
+			int x2 = blank_x + dx[i], y2 = blank_y + dy[i];
+			if (x2 < 0 || x2 >= dim) continue;
+			if (y2 < 0 || y2 >= dim) continue;
+			q.enqueue(new Board(blankSwap(x2, y2), x2, y2));
+		}
+
+		return q;
 	}
 
     // a board that is obtained by exchanging any pair of tiles
     public Board twin() {
-
+		return null;
 	}
 
     // unit testing (not graded)
     public static void main(String[] args) {
+		int dim = StdIn.readInt();
+		int[][] tiles = new int[dim][dim];
 
+		for (int y = 0; y < dim; ++y) {
+			for (int x = 0; x < dim; ++x) {
+				tiles[y][x] = StdIn.readInt();
+			}
+		}
+
+		Board board = new Board(tiles);
+		StdOut.println("Board");
+		StdOut.println(board.toString());
+		StdOut.println("Hamming distance");
+		StdOut.println(board.hamming());
+		StdOut.println("Manhattan distance");
+		StdOut.println(board.manhattan());
+		StdOut.println("Neighbors");
+		for (Board b : board.neighbors())
+			StdOut.println(b.toString());
 	}
 
 }
