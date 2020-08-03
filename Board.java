@@ -1,7 +1,6 @@
 import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.Queue;
-import edu.princeton.cs.algs4.MinPQ;
 
 public class Board {
 	private final int[] cells;
@@ -61,10 +60,8 @@ public class Board {
 		int n = 0;
 		for (int y = 0; y < dim; ++y)
 			for (int x = 0; x < dim; ++x)
-				if (!atPlace(x, y)) {
-					// StdOut.printf(" >> (%d, %d) = %d\n", x, y, getCell(x, y));
+				if (!atPlace(x, y))
 					n++;
-				}
 		return n;
 	}
 
@@ -74,11 +71,6 @@ public class Board {
 		for (int y = 0; y < dim; ++y)
 			for (int x = 0; x < dim; ++x)
 				if (!atPlace(x, y)) {
-					// StdOut.println(getCell(x, y) + " = " + x2 + " --- " + y2);
-					// StdOut.println(" !> " + (Math.abs(x - x2) + Math.abs(y - y2)));
-					// StdOut.printf(" >> (%d, %d) = %d ||| %d\n", x, y, getCell(x, y),
-					// 			  getCell(x, y) / dim);
-					// StdOut.println();
 					int y2 = getCell(x, y) / dim, x2 = getCell(x, y) - y2 * dim - 1;
 					n += Math.abs((Math.abs(x - x2) + Math.abs(y - y2)));
 				}
@@ -94,12 +86,9 @@ public class Board {
 
 		if (this == that)			return true;
 		if (this.dim != that.dim)	return false;
-
-		for (int y = 0; y < dim; ++y)
-			for (int x = 0; x < dim; ++y)
-				if (this.getCell(x, y) != that.getCell(x, y))
-					return false;
-
+		for (int i = 0; i < cells.length; ++i)
+			if (this.cells[i] != that.cells[i])
+				return false;
 		return true;
 	}
 
