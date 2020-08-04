@@ -73,8 +73,15 @@ public class Board {
 		for (int y = 0; y < dim; ++y)
 			for (int x = 0; x < dim; ++x)
 				if (!atPlace(x, y)) {
-					int y2 = getCell(x, y) / dim, x2 = getCell(x, y) - y2 * dim - 1;
-					n += Math.abs((Math.abs(x - x2) + Math.abs(y - y2)));
+					int y2 = (getCell(x, y) - 1) / dim;
+					int x2 = (getCell(x, y) - 1) % dim;
+
+					int val = Math.abs((Math.abs(x - x2) + Math.abs(y - y2)));
+
+					StdOut.println("cell: " + getCell(x, y) + " x2: " + x2 + " y2: " + y2);
+					StdOut.println("value: " + val + "\n");
+
+					n += val;
 				}
 		return n;
 	}
@@ -155,17 +162,17 @@ public class Board {
 		}
 
 		Board board = new Board(tiles);
+
 		StdOut.println("Board");
 		StdOut.println(board.toString());
-		StdOut.println("Hamming distance");
-		StdOut.println(board.hamming());
-		StdOut.println("Manhattan distance");
-		StdOut.println(board.manhattan());
-		StdOut.println("Twin");
-		StdOut.println(board.twin());
-		StdOut.println("Neighbors");
-		for (Board b : board.neighbors())
-			StdOut.println(b.toString());
+		StdOut.println("Hamming distance: " + board.hamming());
+		StdOut.println("Manhattan distance: " + board.manhattan());
+
+		// StdOut.println("Twin");
+		// StdOut.println(board.twin());
+		// StdOut.println("Neighbors");
+		// for (Board b : board.neighbors())
+		// 	StdOut.println(b.toString());
 	}
 
 }
