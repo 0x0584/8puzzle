@@ -45,11 +45,13 @@ public class Board {
 
     // string representation of this board
     public String toString() {
-		String s = "" + dim + "\n";
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("" + dim + "\n");
 		for (int y = 0; y < dim; ++y)
 			for (int x = 0; x < dim; ++x)
-				s += " " + getCell(x, y) + (x + 1 == dim ? "\n" : " ");
-		return s;
+				sb.append(" " + getCell(x, y) + (x + 1 == dim ? "\n" : " "));
+		return sb.toString();
 	}
 
     // board dimension n
@@ -82,9 +84,14 @@ public class Board {
 
     // does this board equal y?
     public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+
+		if (obj == null || obj.getClass() != this.getClass())
+			return false;
+
 		Board that = (Board) obj;
 
-		if (this == that)			return true;
 		if (this.dim != that.dim)	return false;
 		for (int i = 0; i < cells.length; ++i)
 			if (this.cells[i] != that.cells[i])
@@ -125,7 +132,15 @@ public class Board {
 
     // a board that is obtained by exchanging any pair of tiles
     public Board twin() {
-		return null;
+		int i = 0;
+		while (cells[i] == 0) i++;
+		int j = i + 1;
+		while (cells[j] == 0) j++;
+		int[] tmp = cloneCells();
+		int foo = tmp[i];
+		tmp[i] = tmp[j];
+		tmp[j] = foo;
+		return new Board(tmp, blank_x, blank_y);
 	}
 
     // unit testing (not graded)
@@ -146,6 +161,8 @@ public class Board {
 		StdOut.println(board.hamming());
 		StdOut.println("Manhattan distance");
 		StdOut.println(board.manhattan());
+		StdOut.println("Twin");
+		StdOut.println(board.twin());
 		StdOut.println("Neighbors");
 		for (Board b : board.neighbors())
 			StdOut.println(b.toString());

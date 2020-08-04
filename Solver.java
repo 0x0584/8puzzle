@@ -5,12 +5,12 @@ import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.Queue;
-
-import edu.princeton.cs.algs4.RedBlackBST;
+import edu.princeton.cs.algs4.Stack;
+import edu.princeton.cs.algs4.LinearProbingHashST;
 
 public class Solver
 {
-	private Queue<Board> solus = new Queue<Board>();
+	private Stack<Board> solus = new Stack<Board>();
 	private boolean solved = false;
 
 	private final class Node
@@ -47,57 +47,44 @@ public class Solver
 
 	}
 
-	private Queue<Board> solutionBoards(Node current, RedBlackBST<Node, Node> from) {
-		Queue<Board> q = new Queue<Board>();
-		Node prev = null;
-		StdOut.println("PATH!!!!!!!! ");
-		StdIn.readChar();
+	private Stack<Board> solutionBoards(Board current, LinearProbingHashST<Board, Board> from) {
+		Stack<Board> sol = new Stack<Board>();
 
-		q.enqueue(current.board);
-		while (current != prev) {
-			StdOut.println("current: ");
-			StdOut.println(current.toString());
-			StdIn.readChar();
-			prev = current;
+		sol.push(current);
+		while (from.contains(current)) {
 			current = from.get(current);
-			q.enqueue(current.board);
+			sol.push(current);
 		}
-		return q;
+		return sol;
 	}
 
-	public boolean alreadyFound(Node current, MinPQ<Node> pq) {
+	private boolean alreadyFound(Node current, MinPQ<Node> pq) {
 		for (Node node : pq)
 			if (current.board.equals(node.board))
 				return true;
 		return false;
 	}
+
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
 		if (initial == null)
 			throw new IllegalArgumentException("Argument cannot be null");
 
-		RedBlackBST<Node, Node> from = new RedBlackBST<Node, Node>();
+	    LinearProbingHashST<Board, Board> from = new LinearProbingHashST<Board, Board>();
+
 		MinPQ<Node> open = new MinPQ<Node>();
 
 		open.insert(new Node(initial, 0));
 		while (!open.isEmpty()) {
 			Node current = open.delMin();
-			StdOut.println("current: ");
-			StdOut.println(current.toString());
-			StdIn.readChar();
 			if (current.isGoal()) {
-				solus = solutionBoards(current, from);
+				solus = solutionBoards(current.board, from);
 				solved = true;
 				break;
 			}
 			for (Node nei : current.neighbors()) {
-				StdOut.println("nei: ");
-				StdOut.println(nei.toString());
 				if (nei.heuristic() <= current.heuristic()) {
-					StdOut.println("Picked: ");
-					StdOut.println(nei.toString());
-					StdIn.readChar();
-					from.put(nei, current);
+					from.put(nei.board, current.board);
 					if (!alreadyFound(nei, open))
 						open.insert(nei);
 				}
@@ -109,7 +96,7 @@ public class Solver
     public boolean isSolvable()			{ return solved; }
 
     // min number of moves to solve initial board; -1 if unsolvable
-    public int moves()					{ return solved ? solus.size() : -1; }
+    public int moves()					{ return solus.size()  -1; }
 
     // sequence of boards in a shortest solution; null if unsolvable
     public Iterable<Board> solution()	{ return solus; }
