@@ -4,12 +4,44 @@ import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
 import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.MinPQ;
-import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.Stack;
-import edu.princeton.cs.algs4.LinearProbingHashST;
+import edu.princeton.cs.algs4.Queue;
 
 public class Solver
 {
+	private final class ST
+	{
+		private final class Pair
+		{
+			private Board key;
+			private Board value;
+
+			public Pair(Board key, Board value) {
+				this.key = key;
+				this.value = value;
+			}
+		}
+
+		private Stack<Pair> st;
+
+		public ST() { st = new Stack<Pair>(); }
+
+		public Board get(Board key) {
+			if (key == null)
+				return null;
+			for (Pair e : st)
+				if (e.key.equals(key))
+					return e.value;
+			return null;
+		}
+
+		public void put(Board key, Board value) {
+			if (key == null || value == null)
+				return;
+			st.push(new Pair(key, value));
+		}
+	}
+
 	private Stack<Board> solus = new Stack<Board>();
 	private boolean solved = false;
 
@@ -47,12 +79,14 @@ public class Solver
 
 	}
 
-	private Stack<Board> solutionBoards(Board current, LinearProbingHashST<Board, Board> from) {
+	private Stack<Board> solutionBoards(Board current, ST from) {
 		Stack<Board> sol = new Stack<Board>();
 
 		sol.push(current);
-		while (from.contains(current)) {
+		while (true) {
 			current = from.get(current);
+			if (current == null)
+				break;
 			sol.push(current);
 		}
 		return sol;
@@ -70,7 +104,7 @@ public class Solver
 		if (initial == null)
 			throw new IllegalArgumentException("Argument cannot be null");
 
-	    LinearProbingHashST<Board, Board> from = new LinearProbingHashST<Board, Board>();
+	    ST from = new ST();
 
 		MinPQ<Node> open = new MinPQ<Node>();
 
@@ -84,9 +118,10 @@ public class Solver
 			}
 			for (Node nei : current.neighbors()) {
 				if (nei.heuristic() <= current.heuristic()) {
-					from.put(nei.board, current.board);
-					if (!alreadyFound(nei, open))
+					if (!alreadyFound(nei, open)) {
+						from.put(nei.board, current.board);
 						open.insert(nei);
+					}
 				}
 			}
 		}
