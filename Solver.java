@@ -1,7 +1,7 @@
 import java.util.Comparator;
 
-import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.MinPQ;
 import edu.princeton.cs.algs4.Stack;
@@ -9,14 +9,14 @@ import edu.princeton.cs.algs4.Queue;
 
 public class Solver
 {
-	private final class ST
+	private final class SymbolTable<Key, Value>
 	{
 		private final class Pair
 		{
-			private Board key;
-			private Board value;
+			private Key key;
+			private Value value;
 
-			public Pair(Board key, Board value) {
+			public Pair(Key key, Value value) {
 				this.key = key;
 				this.value = value;
 			}
@@ -24,9 +24,9 @@ public class Solver
 
 		private Stack<Pair> st;
 
-		public ST() { st = new Stack<Pair>(); }
+		public SymbolTable() { st = new Stack<Pair>(); }
 
-		public Board get(Board key) {
+		public Value get(Key key) {
 			if (key == null)
 				return null;
 			for (Pair e : st)
@@ -35,9 +35,16 @@ public class Solver
 			return null;
 		}
 
-		public void put(Board key, Board value) {
+		public void put(Key key, Value value) {
 			if (key == null || value == null)
 				return;
+			if (get(key) != null) {
+				StdOut.println(" Duplicated ");
+				StdOut.println(key);
+				StdOut.println(value);
+				StdOut.println(get(key));
+				StdIn.readChar();
+			}
 			st.push(new Pair(key, value));
 		}
 	}
@@ -49,54 +56,64 @@ public class Solver
 		implements Comparable<Node>
 	{
 		private final Board board;
-		private final int n_moves;
+		private Node from = null;
 
-		public Node(Board board, int n_moves) {
-			this.board = board;
-			this.n_moves = n_moves;
+		private final int steps;
+
+		private Queue<Node> neis;
+
+		private Node(Board board, int steps, Queue<Node> neis) {
+			this.board = board; this.steps = steps; this.neis = neis;
 		}
 
-	    public int heuristic()  { return board.manhattan() + n_moves; }
+		public Node(Board board, int steps) {
+			this.board = board; this.steps = steps; this.neis = null;
+		}
+
+	    public int heuristic()  { return board.manhattan() + steps; }
 
 		public boolean isGoal() { return board.isGoal(); }
 
-		public int moves()		{ return n_moves; }
+		public int moves()      { return steps; }
 
-		public Iterable<Node> neighbors() {
-			Queue<Node> q = new Queue<Node>();
-			for (Board nei : board.neighbors())
-				q.enqueue(new Node(nei, n_moves + 1));
-			return q;
+		public void setFrom(Node from) {
+			if (this.from != null) {
+				StdOut.println("Duplicated, old was ");
+				StdOut.println(this.from);
+				StdIn.readChar();
+			}
+			this.from = from;
 		}
 
-		public int compareTo(Node that) {
+		public Iterable<Node> neighbors() {
+			if (neis == null) {
+				neis = new Queue<Node>();
+				for (Board l1 : board.neighbors()) {
+					Queue<Node> leafs = new Queue<Node>();
+					for (Board l2 : l1.neighbors())
+						if (l2.equals(board))
+							continue;
+						else
+							leafs.enqueue(new Node(l2, steps + 2));
+					neis.enqueue(new Node(l1, steps + 1, leafs));
+				}
+			}
+			return neis;
+		}
+
+		public int compareTo(Node that)		{
 			return Integer.compare(this.heuristic(), that.heuristic());
 		}
 
 		public String toString() {
-			return board.toString();
+			return "\n Manhattan: " + board.manhattan() + " Hamming: " + board.hamming()
+				+ " moves: " + steps + " " + board.toString();
 		}
 
 	}
 
-	private Stack<Board> solutionBoards(Board current, ST from) {
-		Stack<Board> sol = new Stack<Board>();
-
-		sol.push(current);
-		while (true) {
-			current = from.get(current);
-			if (current == null)
-				break;
-			sol.push(current);
-		}
-		return sol;
-	}
-
-	private boolean alreadyFound(Node current, MinPQ<Node> pq) {
-		for (Node node : pq)
-			if (current.board.equals(node.board))
-				return true;
-		return false;
+	private void bind(SymbolTable<Board, Board> from, Node key, Node value) {
+		from.put(key.board, value.board);
 	}
 
     // find a solution to the initial board (using the A* algorithm)
@@ -104,27 +121,48 @@ public class Solver
 		if (initial == null)
 			throw new IllegalArgumentException("Argument cannot be null");
 
-	    ST from = new ST();
+	    SymbolTable<Board, Board> from = new SymbolTable<Board, Board>();
 
 		MinPQ<Node> open = new MinPQ<Node>();
+		Node current = new Node(initial, 0);
+		open.insert(current);
 
-		open.insert(new Node(initial, 0));
 		while (!open.isEmpty()) {
-			Node current = open.delMin();
+			current = open.delMin();
+			StdOut.println("Current: " + current);
 			if (current.isGoal()) {
-				solus = solutionBoards(current.board, from);
+				StdOut.println("Goal Reached!!");
+				solus = solutionBoards(current);
 				solved = true;
 				break;
 			}
+			// StdOut.println(" ////// ");
 			for (Node nei : current.neighbors()) {
-				if (nei.heuristic() <= current.heuristic()) {
-					if (!alreadyFound(nei, open)) {
-						from.put(nei.board, current.board);
-						open.insert(nei);
-					}
+				Queue<Node> tmp = new Queue<Node>();
+				// StdOut.println("Neighbor -> " + nei);
+				for (Node nei2 : nei.neighbors()) {
+					if (nei2.equals(current))
+						continue;
+					tmp.enqueue(nei2);
 				}
+				nei.neis = tmp;
+				// bind(from, nei, current);
+				nei.setFrom(current);
+				open.insert(nei);
 			}
+			// StdOut.println(" ////// ");
+			// StdIn.readChar();
 		}
+	}
+
+	private Stack<Board> solutionBoards(Node current) {
+		Stack<Board> sol = new Stack<Board>();
+
+		while (current.from != null) {
+			sol.push(current.board);
+			current = current.from;
+		}
+		return sol;
 	}
 
     // is the initial board solvable? (see below)
@@ -133,8 +171,8 @@ public class Solver
     // min number of moves to solve initial board; -1 if unsolvable
     public int moves()					{ return solus.size()  -1; }
 
-    // sequence of boards in a shortest solution; null if unsolvable
-    public Iterable<Board> solution()	{ return solus; }
+	// sequence of boards in a shortest solution; null if unsolvable
+    public Iterable<Board> solution()	{ return solved ? solus : null; }
 
     // test client (see below)
 	public static void main(String[] args) {
@@ -147,6 +185,8 @@ public class Solver
 			for (int j = 0; j < n; j++)
 				tiles[i][j] = in.readInt();
 		Board initial = new Board(tiles);
+
+		StdOut.println("IN: " + initial);
 
 		// solve the puzzle
 		Solver solver = new Solver(initial);

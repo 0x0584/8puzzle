@@ -78,8 +78,8 @@ public class Board {
 
 					int val = Math.abs((Math.abs(x - x2) + Math.abs(y - y2)));
 
-					StdOut.println("cell: " + getCell(x, y) + " x2: " + x2 + " y2: " + y2);
-					StdOut.println("value: " + val + "\n");
+					// StdOut.println("cell: " + getCell(x, y) + " x2: " + x2 + " y2: " + y2);
+					// StdOut.println("value: " + val + "\n");
 
 					n += val;
 				}
@@ -167,12 +167,11 @@ public class Board {
 		StdOut.println(board.toString());
 		StdOut.println("Hamming distance: " + board.hamming());
 		StdOut.println("Manhattan distance: " + board.manhattan());
-
-		// StdOut.println("Twin");
-		// StdOut.println(board.twin());
-		// StdOut.println("Neighbors");
-		// for (Board b : board.neighbors())
-		// 	StdOut.println(b.toString());
+		StdOut.println("Twin");
+		StdOut.println(board.twin());
+		StdOut.println("Neighbors");
+		for (Board b : board.neighbors())
+			StdOut.println(b.toString());
 	}
 
 }
