@@ -9,27 +9,27 @@ import edu.princeton.cs.algs4.Queue;
 
 public class Solver
 {
+	private final class Pair<Key, Value>
+	{
+		private Key key;
+		private Value value;
+
+		public Pair(Key key, Value value) {
+			this.key = key;
+			this.value = value;
+		}
+	}
+
 	private final class SymbolTable<Key, Value>
 	{
-		private final class Pair
-		{
-			private Key key;
-			private Value value;
+		private Stack<Pair<Key, Value>> st;
 
-			public Pair(Key key, Value value) {
-				this.key = key;
-				this.value = value;
-			}
-		}
-
-		private Stack<Pair> st;
-
-		public SymbolTable() { st = new Stack<Pair>(); }
+		public SymbolTable() { st = new Stack<Pair<Key, Value>>(); }
 
 		public Value get(Key key) {
 			if (key == null)
 				return null;
-			for (Pair e : st)
+			for (Pair<Key, Value> e : st)
 				if (e.key.equals(key))
 					return e.value;
 			return null;
@@ -38,18 +38,13 @@ public class Solver
 		public void put(Key key, Value value) {
 			if (key == null || value == null)
 				return;
-			if (get(key) != null) {
-				StdOut.println(" Duplicated ");
-				StdOut.println(key);
-				StdOut.println(value);
-				StdOut.println(get(key));
-				StdIn.readChar();
-			}
-			st.push(new Pair(key, value));
+			if (get(key) != null)
+				return ;
+			st.push(new Pair<Key, Value>(key, value));
 		}
 	}
 
-	private Stack<Board> solus = new Stack<Board>();
+	private Stack<Board> solus = null;
 	private boolean solved = false;
 
 	private final class Node
@@ -90,11 +85,19 @@ public class Solver
 				neis = new Queue<Node>();
 				for (Board l1 : board.neighbors()) {
 					Queue<Node> leafs = new Queue<Node>();
-					for (Board l2 : l1.neighbors())
-						if (l2.equals(board))
-							continue;
-						else
+					for (Board l2 : l1.neighbors()) {
+						boolean unseen = true;
+						Node parent = from;
+						while (parent != null) {
+							if (l2.equals(parent.board)) {
+								unseen = false;
+								break;
+							}
+							parent = parent.from;
+						}
+						if (unseen && !l2.equals(board))
 							leafs.enqueue(new Node(l2, steps + 2));
+					}
 					neis.enqueue(new Node(l1, steps + 1, leafs));
 				}
 			}
@@ -106,8 +109,7 @@ public class Solver
 		}
 
 		public String toString() {
-			return "\n Manhattan: " + board.manhattan() + " Hamming: " + board.hamming()
-				+ " moves: " + steps + " " + board.toString();
+			return board.toString();
 		}
 
 	}
@@ -121,7 +123,7 @@ public class Solver
 		if (initial == null)
 			throw new IllegalArgumentException("Argument cannot be null");
 
-	    SymbolTable<Board, Board> from = new SymbolTable<Board, Board>();
+	    // SymbolTable<Board, Board> from = new SymbolTable<Board, Board>();
 
 		MinPQ<Node> open = new MinPQ<Node>();
 		Node current = new Node(initial, 0);
@@ -129,25 +131,38 @@ public class Solver
 
 		while (!open.isEmpty()) {
 			current = open.delMin();
-			StdOut.println("Current: " + current);
+			// openStats(open);
+			// StdIn.readChar();
+			if (current.board.equals(initial) && current.steps != 0) {
+				StdOut.println(open.size() + " Loopback: " + current.steps);
+				// StdOut.println(current);
+				// StdIn.readChar();
+			}
+
+			// StdOut.println(open.size() + " Current: " + current);
 			if (current.isGoal()) {
 				StdOut.println("Goal Reached!!");
 				solus = solutionBoards(current);
 				solved = true;
 				break;
 			}
+
 			// StdOut.println(" ////// ");
 			for (Node nei : current.neighbors()) {
 				Queue<Node> tmp = new Queue<Node>();
 				// StdOut.println("Neighbor -> " + nei);
-				for (Node nei2 : nei.neighbors()) {
-					if (nei2.equals(current))
-						continue;
-					tmp.enqueue(nei2);
-				}
-				nei.neis = tmp;
+				// for (Node nei2 : nei.neighbors()) {
+				// 	if (nei2.equals(current))
+				// 		continue;
+				// 	tmp.enqueue(nei2);
+				// }
+				// nei.neis = tmp;
 				// bind(from, nei, current);
 				nei.setFrom(current);
+				// for (Node e : open)
+				// 	if (nei.equals(e))
+				// 		continue;
+
 				open.insert(nei);
 			}
 			// StdOut.println(" ////// ");
@@ -162,6 +177,7 @@ public class Solver
 			sol.push(current.board);
 			current = current.from;
 		}
+		sol.push(current.board);
 		return sol;
 	}
 
@@ -186,15 +202,16 @@ public class Solver
 				tiles[i][j] = in.readInt();
 		Board initial = new Board(tiles);
 
-		StdOut.println("IN: " + initial);
+		// StdOut.println("IN: " + initial);
 
 		// solve the puzzle
 		Solver solver = new Solver(initial);
 
 		// print solution to standard output
-		if (!solver.isSolvable())
+		if (!solver.isSolvable()) {
 			StdOut.println("No solution possible");
-		else {
+			StdOut.println(solver.solution());
+		} else {
 			StdOut.println("Minimum number of moves = " + solver.moves());
 			for (Board board : solver.solution())
 				StdOut.println(board);
