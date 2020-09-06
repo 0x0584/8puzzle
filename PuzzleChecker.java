@@ -35,6 +35,7 @@ public class PuzzleChecker {
         // for each command-line argument
         for (String filename : args) {
 
+            StdOut.printf("%s: ", filename);
             // read in the board specified in the filename
             In in = new In(filename);
             int n = in.readInt();
@@ -48,7 +49,7 @@ public class PuzzleChecker {
             // solve the slider puzzle
             Board initial = new Board(tiles);
             Solver solver = new Solver(initial);
-            StdOut.println(filename + ": " + solver.moves());
+            StdOut.println(solver.moves());
         }
     }
 }

@@ -9,42 +9,7 @@ import edu.princeton.cs.algs4.Queue;
 
 public class Solver
 {
-	private final class Pair<Key, Value>
-	{
-		private Key key;
-		private Value value;
-
-		public Pair(Key key, Value value) {
-			this.key = key;
-			this.value = value;
-		}
-	}
-
-	private final class SymbolTable<Key, Value>
-	{
-		private Stack<Pair<Key, Value>> st;
-
-		public SymbolTable() { st = new Stack<Pair<Key, Value>>(); }
-
-		public Value get(Key key) {
-			if (key == null)
-				return null;
-			for (Pair<Key, Value> e : st)
-				if (e.key.equals(key))
-					return e.value;
-			return null;
-		}
-
-		public void put(Key key, Value value) {
-			if (key == null || value == null)
-				return;
-			if (get(key) != null)
-				return ;
-			st.push(new Pair<Key, Value>(key, value));
-		}
-	}
-
-	private Stack<Board> solus = null;
+	private Stack<Board> solus = new Stack<Board>();
 	private boolean solved = false;
 
 	private final class Node
@@ -65,7 +30,9 @@ public class Solver
 			this.board = board; this.steps = steps; this.neis = null;
 		}
 
-	    public int heuristic()  { return board.manhattan() + steps; }
+	    public int heuristic()  {
+			return board.manhattan() + steps;
+		}
 
 		public boolean isGoal() { return board.isGoal(); }
 
@@ -80,7 +47,7 @@ public class Solver
 			this.from = from;
 		}
 
-		public Iterable<Node> neighbors() {
+		public Queue<Node> neighbors() {
 			if (neis == null) {
 				neis = new Queue<Node>();
 				for (Board l1 : board.neighbors()) {
@@ -114,9 +81,7 @@ public class Solver
 
 	}
 
-	private void bind(SymbolTable<Board, Board> from, Node key, Node value) {
-		from.put(key.board, value.board);
-	}
+	private Solver() { }
 
     // find a solution to the initial board (using the A* algorithm)
     public Solver(Board initial) {
@@ -131,25 +96,36 @@ public class Solver
 
 		while (!open.isEmpty()) {
 			current = open.delMin();
+//
 			// openStats(open);
-			// StdIn.readChar();
-			if (current.board.equals(initial) && current.steps != 0) {
-				StdOut.println(open.size() + " Loopback: " + current.steps);
-				// StdOut.println(current);
-				// StdIn.readChar();
-			}
 
-			// StdOut.println(open.size() + " Current: " + current);
+			// StdOut.println(open.size() + " are currently open ");
+			// StdOut.println(current.steps + " Steps. " + current);
+			// if (current.board.equals(initial) && current.steps != 0) {
+			// 	StdOut.println(" Loopback: ");
+			// 	StdIn.readChar();
+			// }
+
+			// if (current.board.equals(initial) && current.steps != 0) {
+			// 	StdOut.println(open.size() + " Loopback: " + current.steps);
+			// 	// StdOut.println(current);
+			// 	StdIn.readChar();
+			// }
+
+			// StdOut.println(open.size());
+
 			if (current.isGoal()) {
-				StdOut.println("Goal Reached!!");
+				// StdOut.println("Goal Reached!!");
 				solus = solutionBoards(current);
 				solved = true;
 				break;
 			}
-
-			// StdOut.println(" ////// ");
+// 1 2 3
+// 4 5 6
+// 7 8 0
+			// StdOut.println(" Has " + current.neighbors().size() + " //////////// ") ;
 			for (Node nei : current.neighbors()) {
-				Queue<Node> tmp = new Queue<Node>();
+				// Queue<Node> tmp = new Queue<Node>();
 				// StdOut.println("Neighbor -> " + nei);
 				// for (Node nei2 : nei.neighbors()) {
 				// 	if (nei2.equals(current))
@@ -158,12 +134,14 @@ public class Solver
 				// }
 				// nei.neis = tmp;
 				// bind(from, nei, current);
-				nei.setFrom(current);
 				// for (Node e : open)
 				// 	if (nei.equals(e))
 				// 		continue;
 
+				if (nei.neighbors().isEmpty())
+					continue;
 				open.insert(nei);
+				nei.setFrom(current);
 			}
 			// StdOut.println(" ////// ");
 			// StdIn.readChar();
@@ -185,7 +163,7 @@ public class Solver
     public boolean isSolvable()			{ return solved; }
 
     // min number of moves to solve initial board; -1 if unsolvable
-    public int moves()					{ return solus.size()  -1; }
+    public int moves()					{ return solus.size() - 1; }
 
 	// sequence of boards in a shortest solution; null if unsolvable
     public Iterable<Board> solution()	{ return solved ? solus : null; }
@@ -195,22 +173,43 @@ public class Solver
 
 		// create initial board from file
 		In in = new In(args[0]);
+		StdOut.printf("%s: ", args[0]);
 		int n = in.readInt();
 		int[][] tiles = new int[n][n];
-		for (int i = 0; i < n; i++)
-			for (int j = 0; j < n; j++)
+		int[] tmp = new int[n*n];
+		int k = 0;
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
 				tiles[i][j] = in.readInt();
+				tmp[k++] = tiles[i][j];
+			}
+		}
+
+		int invers = 0;
+		int asc = 0;
+		int desc = 0;
+
+		for (int i = 0; i < k; ++i) {
+			if (i > 0) {
+				if (tmp[i] < tmp[i-1]) desc++;
+				else asc++;
+			}
+			for (int j = i+1; j < k; ++j) {
+				if (tmp[j] > tmp[i] && tmp[i] != 0 && tmp[j] != 0)
+					invers++;
+			}
+		}
+
 		Board initial = new Board(tiles);
 
-		// StdOut.println("IN: " + initial);
+		// StdOut.println("IN: " + invers + " " + asc + " " + desc) ;
 
 		// solve the puzzle
-		Solver solver = new Solver(initial);
+		Solver solver = invers % 2 == 1 || asc == 0 ? new Solver() : new Solver(initial);;
 
 		// print solution to standard output
 		if (!solver.isSolvable()) {
 			StdOut.println("No solution possible");
-			StdOut.println(solver.solution());
 		} else {
 			StdOut.println("Minimum number of moves = " + solver.moves());
 			for (Board board : solver.solution())
