@@ -12,33 +12,81 @@ public class Solver
 	private Stack<Board> solus = new Stack<Board>();
 	private boolean solved = false;
 
-	private final class Node
-		implements Comparable<Node>
-	{
-		private final Board board;
-		private Node from = null;
+    // find a solution to the initial board (using the A* algorithm)
+    public Solver(Board initial) {
+		if (initial == null)
+			throw new IllegalArgumentException("Argument cannot be null");
+		MinPQ<SearchNode> open = new MinPQ<SearchNode>();
 
-		private final int steps;
-
-		private Queue<Node> neis;
-
-		private Node(Board board, int steps, Queue<Node> neis) {
-			this.board = board; this.steps = steps; this.neis = neis;
+		open.insert(new SearchNode(initial, 0));
+		open.insert(new SearchNode(initial.twin(), 0));
+		while (!open.isEmpty()) {
+			SearchNode current = open.delMin();
+			if (current.isGoal()) {
+				solus = solutionBoards(current, initial.twin());
+				solved = solus != null;
+				break;
+			}
+			for (SearchNode nei : current.neighbors()) {
+				if (nei.neighbors().isEmpty())
+					continue;
+				nei.setFrom(current);
+				open.insert(nei);
+			}
 		}
 
-		public Node(Board board, int steps) {
+	}
+
+	private Stack<Board> solutionBoards(SearchNode current, Board twin) {
+		Stack<Board> sol = new Stack<Board>();
+
+		while (current.from != null) {
+			sol.push(current.board);
+			current = current.from;
+		}
+		sol.push(current.board);
+		return current.board.equals(twin) ? null : sol;
+	}
+
+    // is the initial board solvable? (see below)
+    public boolean isSolvable()			{ return solved; }
+
+    // min number of moves to solve initial board; -1 if unsolvable
+    public int moves()					{ return solved ?  (solus.size() - 1) : -1; }
+
+	// sequence of boards in a shortest solution; null if unsolvable
+    public Iterable<Board> solution()	{ return solus; }
+
+	private final class SearchNode
+		implements Comparable<SearchNode>
+	{
+		private final Board board;
+		private SearchNode from = null;
+
+		private final int steps;
+		private final int mann;
+
+		private Queue<SearchNode> neis;
+
+		private SearchNode(Board board, int steps, Queue<SearchNode> neis) {
+			this.board = board; this.steps = steps; this.neis = neis;
+			this.mann = board.manhattan();
+		}
+
+		public SearchNode(Board board, int steps) {
 			this.board = board; this.steps = steps; this.neis = null;
+			this.mann = board.manhattan();
 		}
 
 	    public int heuristic()  {
-			return board.manhattan() + steps;
+			return mann  + steps;
 		}
 
 		public boolean isGoal() { return board.isGoal(); }
 
 		public int moves()      { return steps; }
 
-		public void setFrom(Node from) {
+		public void setFrom(SearchNode from) {
 			if (this.from != null) {
 				StdOut.println("Duplicated, old was ");
 				StdOut.println(this.from);
@@ -47,14 +95,14 @@ public class Solver
 			this.from = from;
 		}
 
-		public Queue<Node> neighbors() {
+		public Queue<SearchNode> neighbors() {
 			if (neis == null) {
-				neis = new Queue<Node>();
+				neis = new Queue<SearchNode>();
 				for (Board l1 : board.neighbors()) {
-					Queue<Node> leafs = new Queue<Node>();
+					Queue<SearchNode> leafs = new Queue<SearchNode>();
 					for (Board l2 : l1.neighbors()) {
 						boolean unseen = true;
-						Node parent = from;
+						SearchNode parent = from;
 						while (parent != null) {
 							if (l2.equals(parent.board)) {
 								unseen = false;
@@ -63,15 +111,15 @@ public class Solver
 							parent = parent.from;
 						}
 						if (unseen && !l2.equals(board))
-							leafs.enqueue(new Node(l2, steps + 2));
+							leafs.enqueue(new SearchNode(l2, steps + 2));
 					}
-					neis.enqueue(new Node(l1, steps + 1, leafs));
+					neis.enqueue(new SearchNode(l1, steps + 1, leafs));
 				}
 			}
 			return neis;
 		}
 
-		public int compareTo(Node that)		{
+		public int compareTo(SearchNode that)		{
 			return Integer.compare(this.heuristic(), that.heuristic());
 		}
 
@@ -81,82 +129,17 @@ public class Solver
 
 	}
 
-	private Solver() { }
-
-    // find a solution to the initial board (using the A* algorithm)
-    public Solver(Board initial) {
-		if (initial == null)
-			throw new IllegalArgumentException("Argument cannot be null");
-		MinPQ<Node> open = new MinPQ<Node>();
-		Node current = new Node(initial, 0);
-
-		open.insert(current);
-		while (!open.isEmpty()) {
-			current = open.delMin();
-			if (current.isGoal()) {
-				solus = solutionBoards(current);
-				solved = true;
-				break;
-			}
-			for (Node nei : current.neighbors()) {
-				if (nei.neighbors().isEmpty())
-					continue;
-				nei.setFrom(current);
-				open.insert(nei);
-			}
-		}
-	}
-
-	private Stack<Board> solutionBoards(Node current) {
-		Stack<Board> sol = new Stack<Board>();
-
-		while (current.from != null) {
-			sol.push(current.board);
-			current = current.from;
-		}
-		sol.push(current.board);
-		return sol;
-	}
-
-    // is the initial board solvable? (see below)
-    public boolean isSolvable()			{ return solved; }
-
-    // min number of moves to solve initial board; -1 if unsolvable
-    public int moves()					{ return solus.size() - 1; }
-
-	// sequence of boards in a shortest solution; null if unsolvable
-    public Iterable<Board> solution()	{ return solved ? solus : null; }
-
-	private static Solver prepareSolver(String s) {
-		In in = new In(s);
-		int k = 0, n = in.readInt(),  tiles[][] = new int[n][n], tmp[] = new int[n*n];
-
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				tiles[i][j] = in.readInt();
-				tmp[k++] = tiles[i][j];
-			}
-		}
-
-		int invers = 0, asc = 0, desc = 0;
-
-		for (int i = 0; i < k; ++i) {
-			if (i > 0) {
-				if (tmp[i] < tmp[i-1]) desc++;
-				else asc++;
-			}
-			for (int j = i+1; j < k; ++j) {
-				if (tmp[j] > tmp[i] && tmp[i] != 0 && tmp[j] != 0)
-					invers++;
-			}
-		}
-
-		return  invers % 2 == 1 || asc == 0 ? new Solver() : new Solver(new Board(tiles));
-	}
-
     // test client (see below)
 	public static void main(String[] args) {
-		Solver solver = prepareSolver(args[0]);
+		In in = new In(args[0]);
+		int n = in.readInt();
+		int tiles[][] = new int[n][n];
+
+		for (int i = 0; i < n; i++)
+			for (int j = 0; j < n; j++)
+				tiles[i][j] = in.readInt();
+
+		Solver solver = new Solver(new Board(tiles));
 		if (!solver.isSolvable()) {
 			StdOut.println("No solution possible");
 		} else {

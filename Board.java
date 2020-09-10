@@ -7,7 +7,8 @@ public class Board {
 	private final int dim;
 	private final int blank_x, blank_y;
 
-	///////////////////////////////////////////////////////////////////////////////
+	// private methods ////////////////////////////////////////////////////////////
+
 	private int getCell(int x, int y)			{ return cells[dim * y + x]; }
 	private void setCell(int val, int x, int y) { cells[dim * y + x] = val;  }
 	private void setCell(int[] cells, int val, int x, int y) {
@@ -16,7 +17,22 @@ public class Board {
 	private boolean atPlace(int x, int y)		{
 		return getCell(x, y) == 0 ? true : getCell(x, y) == x + y * dim + 1;
 	}
-	///////////////////////////////////////////////////////////////////////////////
+
+
+	private int[] cloneCells() {
+		int[] tmp = new int[cells.length];
+		for (int i = 0; i < cells.length; ++i)
+			tmp[i] = cells[i];
+		return tmp;
+	}
+
+	private int[] blankSwap(int x, int y) {
+		int[] cells = cloneCells();
+		setCell(cells, getCell(x, y), blank_x, blank_y);
+		setCell(cells, 0, x, y);
+		return cells;
+	}
+
 
 	private Board(int[] cells, int bx, int by) {
 		this.dim = (int)Math.sqrt(cells.length);
@@ -24,6 +40,8 @@ public class Board {
 		this.blank_x = bx;
 		this.blank_y = by;
 	}
+
+	///////////////////////////////////////////////////////////////////////////////
 
     // create a board from an n-by-n array of tiles,
     // where tiles[row][col] = tile at (row, col)
@@ -104,20 +122,6 @@ public class Board {
 			if (this.cells[i] != that.cells[i])
 				return false;
 		return true;
-	}
-
-	private int[] cloneCells() {
-		int[] tmp = new int[cells.length];
-		for (int i = 0; i < cells.length; ++i)
-			tmp[i] = cells[i];
-		return tmp;
-	}
-
-	private int[] blankSwap(int x, int y) {
-		int[] cells = cloneCells();
-		setCell(cells, getCell(x, y), blank_x, blank_y);
-		setCell(cells, 0, x, y);
-		return cells;
 	}
 
     // all neighboring boards
