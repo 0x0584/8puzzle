@@ -87,64 +87,23 @@ public class Solver
     public Solver(Board initial) {
 		if (initial == null)
 			throw new IllegalArgumentException("Argument cannot be null");
-
-	    // SymbolTable<Board, Board> from = new SymbolTable<Board, Board>();
-
 		MinPQ<Node> open = new MinPQ<Node>();
 		Node current = new Node(initial, 0);
-		open.insert(current);
 
+		open.insert(current);
 		while (!open.isEmpty()) {
 			current = open.delMin();
-//
-			// openStats(open);
-
-			// StdOut.println(open.size() + " are currently open ");
-			// StdOut.println(current.steps + " Steps. " + current);
-			// if (current.board.equals(initial) && current.steps != 0) {
-			// 	StdOut.println(" Loopback: ");
-			// 	StdIn.readChar();
-			// }
-
-			// if (current.board.equals(initial) && current.steps != 0) {
-			// 	StdOut.println(open.size() + " Loopback: " + current.steps);
-			// 	// StdOut.println(current);
-			// 	StdIn.readChar();
-			// }
-
-			// StdOut.println(open.size());
-
 			if (current.isGoal()) {
-				// StdOut.println("Goal Reached!!");
 				solus = solutionBoards(current);
 				solved = true;
 				break;
 			}
-// 1 2 3
-// 4 5 6
-// 7 8 0
-			// StdOut.println(" Has " + current.neighbors().size() + " //////////// ") ;
 			for (Node nei : current.neighbors()) {
-				// Queue<Node> tmp = new Queue<Node>();
-				// StdOut.println("Neighbor -> " + nei);
-				// for (Node nei2 : nei.neighbors()) {
-				// 	if (nei2.equals(current))
-				// 		continue;
-				// 	tmp.enqueue(nei2);
-				// }
-				// nei.neis = tmp;
-				// bind(from, nei, current);
-				// for (Node e : open)
-				// 	if (nei.equals(e))
-				// 		continue;
-
 				if (nei.neighbors().isEmpty())
 					continue;
-				open.insert(nei);
 				nei.setFrom(current);
+				open.insert(nei);
 			}
-			// StdOut.println(" ////// ");
-			// StdIn.readChar();
 		}
 	}
 
@@ -168,16 +127,10 @@ public class Solver
 	// sequence of boards in a shortest solution; null if unsolvable
     public Iterable<Board> solution()	{ return solved ? solus : null; }
 
-    // test client (see below)
-	public static void main(String[] args) {
+	private static Solver prepareSolver(String s) {
+		In in = new In(s);
+		int k = 0, n = in.readInt(),  tiles[][] = new int[n][n], tmp[] = new int[n*n];
 
-		// create initial board from file
-		In in = new In(args[0]);
-		StdOut.printf("%s: ", args[0]);
-		int n = in.readInt();
-		int[][] tiles = new int[n][n];
-		int[] tmp = new int[n*n];
-		int k = 0;
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
 				tiles[i][j] = in.readInt();
@@ -185,9 +138,7 @@ public class Solver
 			}
 		}
 
-		int invers = 0;
-		int asc = 0;
-		int desc = 0;
+		int invers = 0, asc = 0, desc = 0;
 
 		for (int i = 0; i < k; ++i) {
 			if (i > 0) {
@@ -200,14 +151,12 @@ public class Solver
 			}
 		}
 
-		Board initial = new Board(tiles);
+		return  invers % 2 == 1 || asc == 0 ? new Solver() : new Solver(new Board(tiles));
+	}
 
-		// StdOut.println("IN: " + invers + " " + asc + " " + desc) ;
-
-		// solve the puzzle
-		Solver solver = invers % 2 == 1 || asc == 0 ? new Solver() : new Solver(initial);;
-
-		// print solution to standard output
+    // test client (see below)
+	public static void main(String[] args) {
+		Solver solver = prepareSolver(args[0]);
 		if (!solver.isSolvable()) {
 			StdOut.println("No solution possible");
 		} else {
