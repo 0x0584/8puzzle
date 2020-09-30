@@ -9,8 +9,10 @@ public class Board {
 
 	// private methods ////////////////////////////////////////////////////////////
 
-	private int getCell(int x, int y)			{ return cells[dim * y + x]; }
+	private int  getCell(int x, int y)			{ return cells[dim * y + x]; }
+
 	private void setCell(int val, int x, int y) { cells[dim * y + x] = val;  }
+
 	private void setCell(int[] cells, int val, int x, int y) {
 		cells[dim * y + x] = val;
 	}
@@ -37,8 +39,7 @@ public class Board {
 	private Board(int[] cells, int bx, int by) {
 		this.dim = (int)Math.sqrt(cells.length);
 		this.cells = cells;
-		this.blank_x = bx;
-		this.blank_y = by;
+		this.blank_x = bx; this.blank_y = by;
 	}
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -93,12 +94,7 @@ public class Board {
 				if (!atPlace(x, y)) {
 					int y2 = (getCell(x, y) - 1) / dim;
 					int x2 = (getCell(x, y) - 1) % dim;
-
 					int val = Math.abs((Math.abs(x - x2) + Math.abs(y - y2)));
-
-					// StdOut.println("cell: " + getCell(x, y) + " x2: " + x2 + " y2: " + y2);
-					// StdOut.println("value: " + val + "\n");
-
 					n += val;
 				}
 		return n;
@@ -116,8 +112,8 @@ public class Board {
 			return false;
 
 		Board that = (Board) obj;
-
-		if (this.dim != that.dim)	return false;
+		if (this.dim != that.dim)
+			return false;
 		for (int i = 0; i < cells.length; ++i)
 			if (this.cells[i] != that.cells[i])
 				return false;
@@ -159,14 +155,11 @@ public class Board {
 		int dim = StdIn.readInt();
 		int[][] tiles = new int[dim][dim];
 
-		for (int y = 0; y < dim; ++y) {
-			for (int x = 0; x < dim; ++x) {
+		for (int y = 0; y < dim; ++y)
+			for (int x = 0; x < dim; ++x)
 				tiles[y][x] = StdIn.readInt();
-			}
-		}
 
 		Board board = new Board(tiles);
-
 		StdOut.println("Board");
 		StdOut.println(board.toString());
 		StdOut.println("Hamming distance: " + board.hamming());

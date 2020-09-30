@@ -21,6 +21,14 @@ public class Solver
 		private final int steps;
 		private final int score;
 
+		public SearchNode(SearchNode from, Board board) {
+			this(from, board, from.steps() + 1);
+		}
+
+		public SearchNode(Board board, int steps) {
+			this(null, board, steps);
+		}
+
 		public SearchNode(SearchNode from, Board board, int steps) {
 			this.from = from;
 			this.board = board;
@@ -36,6 +44,10 @@ public class Solver
 
 		public Iterable<Board> neighbors() { return board.neighbors(); }
 
+		public boolean safeMove(Board nei) {
+			return from == null || !nei.equals(from.board);
+		}
+
 		public int compareTo(SearchNode that) {
 			return Integer.compare(this.score, that.score);
 		}
@@ -47,23 +59,21 @@ public class Solver
 			throw new IllegalArgumentException("Argument cannot be null");
 
 		MinPQ<SearchNode> open = new MinPQ<SearchNode>();
-		open.insert(new SearchNode(null, initial, 0));
-		open.insert(new SearchNode(null, initial.twin(), 0));
+		open.insert(new SearchNode(initial, 0));
+		open.insert(new SearchNode(initial.twin(), 0));
 		while (!open.isEmpty()) {
 			SearchNode current = open.delMin();
 			if (current.isGoal()) {
-				solus = solutionBoards(current, initial.twin());
-				solved = solus != null;
+				solutionBoards(current, initial.twin());
 				break;
 			}
-			for (Board nei : current.neighbors()) {
-				if (current.from == null || !nei.equals(current.from.board))
-					open.insert(new SearchNode(current, nei, current.steps() + 1));
-			}
+			for (Board nei : current.neighbors())
+				if (current.safeMove(nei))
+					open.insert(new SearchNode(current, nei));
 		}
 	}
 
-	private Stack<Board> solutionBoards(SearchNode current, Board twin) {
+	private void solutionBoards(SearchNode current, Board twin) {
 		Stack<Board> sol = new Stack<Board>();
 
 		while (current.from != null) {
@@ -71,7 +81,11 @@ public class Solver
 			current = current.from;
 		}
 		sol.push(current.board);
-		return current.board.equals(twin) ? null : sol;
+		if (current.board.equals(twin))
+			solus = null;
+		else
+			solus = sol;
+		solved = solus != null;
 	}
 
     // is the initial board solvable? (see below)
